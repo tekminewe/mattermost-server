@@ -281,7 +281,7 @@ func (a *App) createUserOrGuest(user *model.User, guest bool) (*model.User, *mod
 		})
 	}
 
-	if a.HasESIndexingEnabled() {
+	if a.IsESIndexingEnabled() {
 		a.Srv.Go(func() {
 			if err := a.indexUser(user); err != nil {
 				mlog.Error("Encountered error indexing user", mlog.String("user_id", user.Id), mlog.Err(err))
@@ -1154,7 +1154,7 @@ func (a *App) UpdateUser(user *model.User, sendNotifications bool) (*model.User,
 
 	a.InvalidateCacheForUser(user.Id)
 
-	if a.HasESIndexingEnabled() {
+	if a.IsESIndexingEnabled() {
 		a.Srv.Go(func() {
 			if err := a.indexUser(user); err != nil {
 				mlog.Error("Encountered error indexing user", mlog.String("user_id", user.Id), mlog.Err(err))
@@ -1503,7 +1503,7 @@ func (a *App) PermanentDeleteUser(user *model.User) *model.AppError {
 
 	mlog.Warn(fmt.Sprintf("Permanently deleted account %v id=%v", user.Email, user.Id), mlog.String("user_id", user.Id))
 
-	if a.HasESIndexingEnabled() {
+	if a.IsESIndexingEnabled() {
 		a.Srv.Go(func() {
 			if err := a.Elasticsearch.DeleteUser(user); err != nil {
 				mlog.Error("Encountered error deleting user", mlog.String("user_id", user.Id), mlog.Err(err))
@@ -1729,14 +1729,14 @@ func (a *App) SearchUsersInTeam(teamId string, term string, options *model.UserS
 	var err *model.AppError
 	term = strings.TrimSpace(term)
 
-	if a.HasESAutocompletionEnabled() {
+	if a.IsESAutocompletionEnabled() {
 		users, err = a.esSearchUsersInTeam(teamId, term, options)
 		if err != nil {
 			mlog.Error("Encountered error on SearchUsersInTeam through Elasticsearch. Falling back to default search.", mlog.Err(err))
 		}
 	}
 
-	if !a.HasESAutocompletionEnabled() || err != nil {
+	if !a.IsESAutocompletionEnabled() || err != nil {
 		result := <-a.Srv.Store.User().Search(teamId, term, options)
 		if result.Err != nil {
 			return nil, result.Err
@@ -1836,14 +1836,14 @@ func (a *App) AutocompleteUsersInChannel(teamId string, channelId string, term s
 	var err *model.AppError
 	term = strings.TrimSpace(term)
 
-	if a.HasESAutocompletionEnabled() {
+	if a.IsESAutocompletionEnabled() {
 		autocomplete, err = a.esAutocompleteUsersInChannel(teamId, channelId, term, options)
 		if err != nil {
 			mlog.Error("Encountered error on AutocompleteUsersInChannel through Elasticsearch. Falling back to default autocompletion.", mlog.Err(err))
 		}
 	}
 
-	if !a.HasESAutocompletionEnabled() || err != nil {
+	if !a.IsESAutocompletionEnabled() || err != nil {
 		autocomplete = &model.UserAutocompleteInChannel{}
 		uchan := a.Srv.Store.User().SearchInChannel(channelId, term, options)
 		nuchan := a.Srv.Store.User().SearchNotInChannel(teamId, channelId, term, options)
@@ -1912,14 +1912,14 @@ func (a *App) AutocompleteUsersInTeam(teamId string, term string, options *model
 
 	term = strings.TrimSpace(term)
 
-	if a.HasESAutocompletionEnabled() {
+	if a.IsESAutocompletionEnabled() {
 		autocomplete, err = a.esAutocompleteUsersInTeam(teamId, term, options)
 		if err != nil {
 			mlog.Error("Encountered error on AutocompleteUsersInTeam through Elasticsearch. Falling back to default autocompletion.", mlog.Err(err))
 		}
 	}
 
-	if !a.HasESAutocompletionEnabled() || err != nil {
+	if !a.IsESAutocompletionEnabled() || err != nil {
 		autocomplete = &model.UserAutocompleteInTeam{}
 		result := <-a.Srv.Store.User().Search(teamId, term, options)
 		if result.Err != nil {
@@ -1980,7 +1980,7 @@ func (a *App) UpdateOAuthUserAttrs(userData io.Reader, user *model.User, provide
 		user = users.New
 		a.InvalidateCacheForUser(user.Id)
 
-		if a.HasESIndexingEnabled() {
+		if a.IsESIndexingEnabled() {
 			a.Srv.Go(func() {
 				if err := a.indexUser(user); err != nil {
 					mlog.Error("Encountered error indexing user", mlog.String("user_id", user.Id), mlog.Err(err))
