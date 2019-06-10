@@ -512,7 +512,7 @@ func (a *App) UpdateChannel(channel *model.Channel) (*model.Channel, *model.AppE
 	messageWs.Add("channel", channel.ToJson())
 	a.Publish(messageWs)
 
-	if a.IsESIndexingEnabled() && channel.Type == "O" {
+	if a.IsESIndexingEnabled() && channel.Type == model.CHANNEL_OPEN {
 		a.Srv.Go(func() {
 			if err := a.Elasticsearch.IndexChannel(channel); err != nil {
 				mlog.Error("Encountered error indexing channel", mlog.String("channel_id", channel.Id), mlog.Err(err))
